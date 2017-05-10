@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+/*#menu{
+  width: 100%;
+  background-color: black;
+  height: 40px;
+}
+#menu ul{
+  color: white;
+  text-decoration: none;
+}*/
+#menu ul li{
+  display: inline-block;
+  color: white;
+}
+
+a:link, a:visited {
+    background-color: black;
+    color: white;
+    padding: 14px 25px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+a:hover, a:active {
+    background-color: blue;
+}
+
+h1{
+  color: #5e9ca0;
+}
+h2{
+  color: #2e6c80;
+}
+
+#questions ul li{
+  margin-top: 8px;
+  font-size: 18px;
+}
+
+#references{
+  display: none;
+}
+
+</style>
+<head>
+</head>
+<body>
+<header>
+  <div id="menu">
+    <ul>
+      <li><a href="index.html">Home </a></li>
+      <li><a href="p1.html">Design 1 </a></li>
+      <li><a href="p2.html">Design 2 </a></li>
+    </ul>
+  </div>
+</header>
+<div id="references">
+  <a href="https://bl.ocks.org/mbostock/4060606"></a>
+  <a href="https://bl.ocks.org/DimsumPanda/689368252f55179e12185e13c5ed1fee"></a>
+  <a href="https://bl.ocks.org/d3noob/08af723fe615c08f9536f656b55755b4"></a>
+  <a href="http://stackoverflow.com/questions/27367849/how-to-rotate-and-change-font-size-on-x-axis"></a>
+  <a href="https://bl.ocks.org/mbostock/9764126"></a>
+  <a href="https://bl.ocks.org/d3noob/4db972df5d7efc7d611255d1cc6f3c4f"></a>
+  <a href="http://bl.ocks.org/d3noob/5d621a60e2d1d02086bf"></a>
+  <a href=""></a>
+</div>
+<h1>H-1B Visa Petitions</h1>
+<h2>Chetan Kumar</h2>
+<h2>Datasets</h2>
+<ul>
+  <li>H-1B Visa Petitions 2011-2016</li>
+  <li>All Places of Origin (Institute of International Education)</li>
+</ul>
+<h2>Attributes</h2>
+<ul>
+  <li>State</li>
+  <li>Job Title</li>
+  <li>Case Status
+    <ul>
+        <li>Certify</li>
+        <li>Denied</li>
+        <li>Certify Withdrawn</li>
+        <li>Withdrawn</li>
+      </ul>
+  </li>
+  <li>Year</li>
+</ul>
+<h2>Questions</h2>
+<div id="questions">
+  <ul>
+    <li>What is the spatial trend of H1-B Visa applications around the United States?</li>
+    <li>What is the trend between each visa case status according to the state?
+    </li>
+    <li>What is the total number of applicants in each job category according the selected state?</li>
+    <li>What is the relation between total number of international students enrolled in the US with the
+total number of H-1B visa petitions each year?</li>
+    <li>What is the comparisons of the case status in two different states?</li>
+  </ul>
+</div>
+</body>
+</html>

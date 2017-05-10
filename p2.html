@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+#menu ul li{
+  display: inline-block;
+  color: white;
+}
+
+a:link, a:visited {
+    background-color: black;
+    color: white;
+    padding: 14px 25px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+a:hover, a:active {
+    background-color: blue;
+}
+
+
+.cls1{
+   color:green;
+  }
+  #id1{
+    font-style:italic;
+    font-weight:normal;
+  }
+  #id2{
+    color:red;
+  }
+  .line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 2px;
+  }
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+  .x-axis {
+    font-weight: 2px;
+  }
+  .legend {
+      font-size: 10px;
+      font-weight: bold;
+      text-anchor: middle;
+  }
+  #tab1{
+    height: 800px;
+    width: 100%;
+  }
+  #map1{
+    position: fixed;
+    float: left;
+    width: 50%;
+    //height: 400px;
+  }
+  #div-right{
+    width: 50%;
+   // height: 400px;
+    float: right;
+  }
+  #tab2{
+    float: left;
+  }
+  #map2{
+    width: 50%;
+    height: 600px;
+    float: left;
+  }
+  #case{
+    display: none;
+  }
+  #q5{
+    width: 50%;
+    height: 600px;
+    float: left;
+  }
+
+  
+</style>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.5.0/d3.js"></script>
+  <script src="https://d3js.org/d3-array.v1.min.js"></script>
+  <script src="https://d3js.org/d3-geo.v1.min.js"></script>
+  <script src="https://d3js.org/d3-geo-projection.v1.min.js"></script>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+  <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+</head>
+<body>
+
+<header>
+  <div id="menu">
+    <ul>
+      <li><a href="index.html">Home </a></li>
+      <li><a href="p1.html">Design 1 </a></li>
+      <li><a href="p2.html">Design 2 </a></li>
+    </ul>
+  </div>
+</header>
+
+  <div id="scatterPlot"></div>
+  <div id="map2"></div>
+  
+  <div id="q5">
+    <select id="case" onchange="highlightYear(this.value)">
+    <option value="CERTIFIED">Certified</option>
+    <option value="DENIED">Denied</option>
+    <option value="WITHDRAWN">Withdrawn</option>
+    <option value="CERTIFIED-WITHDRAWN">Certified-Withdrawn</option>
+  </select>
+  </div>
+</body>
+
+
+<script>
+globalLineDataComparision = [];
+gloablFirstStateName = "";
+gloablKeepFirstStateName = "";
+gloablSecondStateName = "";
+globalCaseName = "CERTIFIED";
+
+function processData(errors, data, data1, data2, data3) {
+  var w = 580;
+  var h = 400;
+
+  var projection1 = d3.geoAlbersUsa()
+    .fitSize([w,h], data)
+
+  createMap2(data,data1,"#map2", projection1, w, h); //function for map chart
+  createScatterPlot(data2);
+  globalLineDataComparision = data3;
+}
+
+d3.queue()
+  .defer(d3.json, "https://gist.githubusercontent.com/dkrathi457/f1b139170c8d0db752e41906d9cdc216/raw/3a181d755ec50a1b2ea98362a5e60fef6c94ff65/us-states.geojson")
+  .defer(d3.json, "https://api.myjson.com/bins/yfh91") //data for map chart
+  .defer(d3.json, "https://api.myjson.com/bins/u0qtl") //data for scatter plot
+  .defer(d3.json, "https://api.myjson.com/bins/5zio9") //data for design 5
+  .await(processData)
+
+
+function createScatterPlot(data){
+  //console.log(data);
+  var margin = {top: 20, right: 20, bottom: 110, left: 50},
+                margin2 = {top: 430, right: 20, bottom: 30, left: 40},
+                width = 700 - margin.left - margin.right,
+                height = 500 - margin.top - margin.bottom,
+                height2 = 500 - margin2.top - margin2.bottom;
+
+        var x = d3.scaleLinear().range([0, width]),
+                x2 = d3.scaleLinear().range([0, width]),
+                y = d3.scaleLinear().range([height, 0]),
+                y2 = d3.scaleLinear().range([height2, 0]);
+
+        var xAxis = d3.axisBottom(x),
+                xAxis2 = d3.axisBottom(x2),
+                yAxis = y;
+
+        var color = d3.scaleOrdinal(d3.schemeCategory10);
+        
+        var svg = d3.select("#scatterPlot").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom);
+
+        var svg1 = svg.append("g")
+                .attr("class", "focus")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        
+        //x.domain(d3.extent(data, function(d) { return d.enrolled; }));
+        //x.domain([700000, d3.max(data, function(d) { return d.enrolled; })]);
+        x.domain([700000, 1100000]);
+        //y.domain([0, d3.max(data, function(d) { return d.graduated; })]);
+        y.domain([300000, 700000]);
+        x2.domain(x.domain());
+        y2.domain(y.domain());
+
+        svg1 = svg1.append("g");
+        svg1.attr("clip-path", "url(#clip)");
+        svg1.selectAll("svg")
+                .data(data)
+                .enter().append("circle")
+                .attr("r",8)
+                //.style("opacity", .1)
+                .attr("cx", function(d) { return x(d.enrolled); })
+                .attr("cy", function(d) { return y(d.graduated); })
+                .style("fill", function(d) { 
+                                return color(d.year) 
+                         })
+
+        svg1.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(xAxis.ticks(10).tickFormat(d3.formatPrefix(".0",1e3)));
+
+        svg1.append("g")
+                .call(d3.axisLeft(y).ticks(10).tickFormat(d3.formatPrefix(".0",1e3)));
+
+        svg1.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 0 - margin.left)
+                .attr("x",0 - (height / 2))
+                .attr("dy", "1em")
+                .style("text-anchor", "middle")
+                .text("H-1B Visa Petitions");
+
+        var legend = svg1.append("g")
+                      .attr("font-family", "sans-serif")
+                      .attr("font-size", 10)
+                      .attr("text-anchor", "end")
+                      .enter().append("g")
+                      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+  
+ 
+    svg.append("text")
+                .attr("transform", "translate(" + (width/2) + " ," + (height + margin.top + 40) + ")")                .style("text-anchor", "middle")
+                .text("Students Enrolled in US Universities");
+
+    var years = ["2011", "2012", "2013", "2014", "2015", "2016"];
+
+    var legend = svg1.selectAll(".legend")
+      .data(years)
+      .enter().append("g")
+      .attr("text-anchor", "end")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; })
+      .style("font", "10px sans-serif");
+
+
+      legend.append("rect")
+      .attr("x", width)
+      .attr("width", 18)
+      .attr("height", 18)
+      .attr("fill", color);
+
+      legend.append("text")
+      .attr("x", width-30)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .attr("text-anchor", "start")
+      .text(function(d) {return d; });
+}
+
+function createMap2(data, data1,divId, projection, w, h) {
+
+  var a = d3.extent(data1, function(d){  return d.Percent})
+
+  var color = d3.scaleThreshold()
+    .domain(d3.range(0,20))
+    .range(d3.schemeBlues[9]);
+ 
+  var mapSvg = d3.select(divId).append("svg")
+    .attr("width", w)
+    .attr("height", h);
+
+  var path = d3.geoPath()
+    .projection(projection);
+
+  var x = d3.scaleLinear()
+      .domain([1, 20])
+      .rangeRound([350, 800]);
+  
+  mapSvg.append("path")
+    .datum(data)
+    .attr("d", path)
+    .style("stroke", "black")
+    .style("fill", "none");
+  
+  mapSvg.append("g")
+      .selectAll("path")
+      .data(data.features)
+      .enter()
+      .append("path")
+      .attr("d", path)
+      .style("fill", function(d){
+        data1.map(function(w){
+          var obj1 =  d.properties.name.toLowerCase()
+          var obj2 =  w.STATE.toLowerCase()
+          if(w.STATE.toLowerCase() == d.properties.name.toLowerCase()){
+            d.properties.count = w.Percent;
+          }
+        });
+        return color(d.properties.count);
+      })
+      .classed("highlight", false)
+      .on('click', function(d, i){
+        var currentState = d.properties.name;
+        lineChartData(currentState);
+      })
+      .append("title")
+      .text(function(d) { return d.properties.name; });
+
+  var g = mapSvg.append("g")
+    .attr("class", "key")
+    .attr("transform", "translate(0,40)");
+
+  g.selectAll("rect")
+    .data(color.range().map(function(d) {
+     // console.log(d)
+      d = color.invertExtent(d);
+      //console.log(d)
+      if (d[0] == null) d[0] = x.domain()[0];
+      if (d[1] == null) d[1] = x.domain()[1];
+      return d;
+    }))
+  .enter().append("rect")
+    .attr("height", 12)
+    .attr("x", function(d) {  return (x(d[0])); })
+    .attr("width", function(d) {  return (Math.abs(x(d[1]) - x(d[0])))*2; })
+    .attr("fill", function(d) { return color(d[0]); });
+
+g.append("text")
+    .attr("class", "caption")
+    .attr("x", x.range()[0])
+    .attr("y", -6)
+    .attr("fill", "#000")
+    .attr("text-anchor", "start")
+    .attr("font-weight", "bold")
+    .text("Visa Petitions Percentage");
+
+g.append("text")
+    .attr("class", "caption")
+    //.attr("x", 570)
+    .attr("x", 320)
+    .attr("y", 23)
+    .attr("fill", "#000")
+    .attr("text-anchor", "start")
+    .attr("font-weight", "bold")
+    .text(d3.format(".1n")   (a[0]) + "%");
+
+
+g.append("text")
+    .attr("class", "caption")
+    //.attr("x", 765)
+    .attr("x", 515)
+    .attr("y", 23)
+    .attr("fill", "#000")
+    .attr("text-anchor", "start")
+    .attr("font-weight", "bold")
+    .text(d3.format(".3n")   (a[1]) + "%")
+}
+
+function highlightYear(valYear) {
+      globalCaseName = valYear;
+      if (gloablFirstStateName != "" && gloablSecondStateName != "") {
+        createLineChartComparision(gloablKeepFirstStateName, gloablSecondStateName, globalCaseName);
+      }
+}
+
+function lineChartData(stateName){
+  var x = document.getElementById('case');
+  x.style.display = 'block';
+  if (gloablFirstStateName != "") {  
+    createLineChartComparision(gloablFirstStateName, stateName, globalCaseName);
+    gloablSecondStateName = stateName;
+    gloablKeepFirstStateName = gloablFirstStateName;
+  }
+  gloablFirstStateName = stateName;
+  
+}
+
+
+function createLineChartComparision(stateName1, stateName2, caseName){
+  var color = d3.scaleOrdinal(d3.schemeCategory10);
+  //console.log(stateName1, stateName2);
+  d3.select("#q5").selectAll("svg").remove();
+  //console.log(stateName);
+  stateName1 = stateName1.toUpperCase();
+  stateName2 = stateName2.toUpperCase();
+  data = globalLineDataComparision;
+  //console.log(data);
+  var data1 = [];
+  data.map(function(d){
+    //console.log(stateName);
+    if(d.STATE == stateName1 && d.CASE_STATUS == caseName){
+      var newElement = {};
+      newElement['YEAR'] = d.YEAR;
+      newElement['state1'] = d.Freq;
+      newElement['state2'] = 0;
+      data1.push(newElement);
+    }
+  });
+  //console.log(data1[0].state2);
+  //console.log(data[0].STATE);
+  var j = 0;
+  for (var i = 0; i < 1248; i++) {
+    if(data[i].STATE == stateName2 && data[i].CASE_STATUS == caseName){
+      //console.log(stateName2);
+      data1[j].state2 = data[i].Freq;
+      j = j+1;
+    }
+  }
+  //console.log(data1);
+  
+  data = data1;
+  var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = 600 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
+
+var x = d3.scaleLinear().range([0, width]);
+var y = d3.scaleLinear().range([height, 0]);
+
+var valueline = d3.line()
+    .x(function(d) { return x(d.YEAR); })
+    .y(function(d) { return y(d.state1); });
+
+var valueline2 = d3.line()
+    .x(function(d) { return x(d.YEAR); })
+    .y(function(d) { return y(d.state2); });
+
+var svg = d3.select("#q5").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+  data.forEach(function(d) {
+      d.YEAR = +d.YEAR;
+      d.state1 = +d.state1;
+      d.state2 = +d.state2;
+  });
+
+  x.domain(d3.extent(data, function(d) { return d.YEAR; }));
+  y.domain([0, d3.max(data, function(d) {
+    return Math.max(d.state1, d.state2); })]);
+
+  svg.append("path")
+      .data([data])
+      .attr("class", "line")
+      .style("stroke", "orange")
+      .attr("d", valueline);
+
+  svg.append("path")
+      .data([data])
+      .attr("class", "line")
+      .style("stroke", "blue")
+      .attr("d", valueline2);
+
+  svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x));
+
+  svg.append("g")
+      .call(d3.axisLeft(y));
+
+//for legend i used http://stackoverflow.com/questions/38954316/adding-legends-to-d3-js-line-charts
+
+var legend_keys = [];
+legend_keys[0] = stateName1;
+legend_keys[1] = stateName2;
+
+
+
+//if (legend_keys.indexOf(0) == '1' ) { 
+//   console.log("got it");
+//}
+
+console.log(legend_keys);
+var colorscale1 = d3.scaleOrdinal().range(["orange" ,"blue"])
+var lineLegend = svg.selectAll("svg").data(legend_keys)
+    .enter().append("g")
+    .attr("class","lineLegend")
+    .attr("transform", function (d,i) {
+            "translate(" + width + "," + (i*20)+")";
+        });
+
+lineLegend.append("text").text(function (d) {/*console.log(d);*/return d;})
+    .attr("transform", "translate(15,9)")
+    .attr("width", 10).attr("height", 10)//.attr("x", 5); //align texts with boxes
+    .attr("x", function(d, i) {
+                if (i == 0){
+       return i+1*10 
+      }
+      if(i == 1)
+      {
+                return i*180; }
+                });
+ 
+                
+
+lineLegend.append("rect")
+    .attr("fill", function (d, i) {return colorscale1(d); })
+    .attr("width", 10).attr("height", 10)//.attr("x", 5);
+    .attr("x", function(d, i) { 
+      if (i == 0){
+       return i+1*10 
+      }
+      if(i == 1)
+      {
+                return i*175; }
+                });
+
+}
+
+function createTry(){
+
+}
+
+</script>
+
+</html>

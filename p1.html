@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+#menu ul li{
+  display: inline-block;
+  color: white;
+}
+
+a:link, a:visited {
+    background-color: black;
+    color: white;
+    padding: 14px 25px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+a:hover, a:active {
+    background-color: blue;
+}
+
+
+.cls1{
+   color:green;
+  }
+  #id1{
+    font-style:italic;
+    font-weight:normal;
+  }
+  #id2{
+    color:red;
+  }
+  .line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 2px;
+  }
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+  .x-axis {
+    font-weight: 2px;
+  }
+  .legend {
+      font-size: 10px;
+      font-weight: bold;
+      text-anchor: middle;
+  }
+  #tab1{
+    height: 800px;
+    width: 100%;
+  }
+  #map1{
+    position: fixed;
+    float: left;
+    width: 50%;
+    //height: 400px;
+  }
+  #div-right{
+    width: 50%;
+   // height: 400px;
+    float: right;
+  }
+  #tab2{
+    float: left;
+  }
+  
+</style>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.5.0/d3.js"></script>
+  <script src="https://d3js.org/d3-array.v1.min.js"></script>
+  <script src="https://d3js.org/d3-geo.v1.min.js"></script>
+  <script src="https://d3js.org/d3-geo-projection.v1.min.js"></script>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+  <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+</head>
+<body>
+
+<header>
+  <div id="menu">
+    <ul>
+      <li><a href="index.html">Home </a></li>
+      <li><a href="p1.html">Design 1 </a></li>
+      <li><a href="p2.html">Design 2 </a></li>
+    </ul>
+  </div>
+</header>
+
+<div id="tab1">
+  <div id="map1"></div>
+  <div id="div-right">
+    <div id="q2"></div> 
+    <div id="barchart"></div>
+  </div>
+</div>
+<div id="tab2">
+  <div id="scatterPlot"></div>
+</div>
+
+</body>
+
+<script>
+
+globalLineData = [];
+globalBarData = [];
+
+function createMap(data, data1,divId, projection, w, h) {
+ 
+	//console.log(data1);
+
+ //Reference: https://bl.ocks.org/mbostock/4060606
+
+  var a = d3.extent(data1, function(d){  return d.Percent})
+//console.log(a)
+  var color = d3.scaleThreshold()
+    .domain(d3.range(0,20))
+    .range(d3.schemeBlues[9]);
+ 
+  var mapSvg = d3.select(divId).append("svg")
+  	.attr("width", w)
+	  .attr("height", h);
+
+  var path = d3.geoPath()
+    .projection(projection);
+
+  var x = d3.scaleLinear()
+      .domain([1, 20])
+      //.rangeRound([600, 1050]);
+      .rangeRound([350, 800]);
+  
+  mapSvg.append("path")
+    .datum(data)
+    .attr("d", path)
+    .style("stroke", "black")
+    .style("fill", "none");
+  
+  //console.log(data.features[1].properties.name.toLowerCase());
+  mapSvg.append("g")
+      .selectAll("path")
+      .data(data.features)
+      .enter()
+      .append("path")
+      .attr("d", path)
+      .style("fill", function(d){
+        data1.map(function(w){
+          var obj1 =  d.properties.name.toLowerCase()
+          var obj2 =  w.STATE.toLowerCase()
+          if(w.STATE.toLowerCase() == d.properties.name.toLowerCase()){
+            d.properties.count = w.Percent;
+          }
+        });
+        return color(d.properties.count);
+      })
+      .classed("highlight", false)
+      .on('mouseover', function(d, i){
+      	var currentState = d.properties.name;
+      	createLineChart(currentState);
+        createBarChart(currentState);
+      	//console.log(currentState);
+      })
+      .append("title")
+      .text(function(d) { return d.properties.name; });
+
+
+  // I followed below link for legend 
+  // Reference: https://bl.ocks.org/DimsumPanda/689368252f55179e12185e13c5ed1fee
+    
+  var g = mapSvg.append("g")
+    .attr("class", "key")
+    .attr("transform", "translate(0,40)");
+
+  g.selectAll("rect")
+    .data(color.range().map(function(d) {
+     // console.log(d)
+      d = color.invertExtent(d);
+      //console.log(d)
+      if (d[0] == null) d[0] = x.domain()[0];
+      if (d[1] == null) d[1] = x.domain()[1];
+      return d;
+    }))
+  .enter().append("rect")
+    .attr("height", 12)
+    .attr("x", function(d) {  return (x(d[0])); })
+    .attr("width", function(d) {  return (Math.abs(x(d[1]) - x(d[0])))*2; })
+    .attr("fill", function(d) { return color(d[0]); });
+
+g.append("text")
+    .attr("class", "caption")
+    .attr("x", x.range()[0])
+    .attr("y", -6)
+    .attr("fill", "#000")
+    .attr("text-anchor", "start")
+    .attr("font-weight", "bold")
+    .text("Visa Petitions Percentage");
+
+g.append("text")
+    .attr("class", "caption")
+    //.attr("x", 570)
+    .attr("x", 320)
+    .attr("y", 23)
+    .attr("fill", "#000")
+    .attr("text-anchor", "start")
+    .attr("font-weight", "bold")
+    .text(d3.format(".1n")   (a[0]) + "%");
+
+
+g.append("text")
+    .attr("class", "caption")
+    //.attr("x", 765)
+    .attr("x", 515)
+    .attr("y", 23)
+    .attr("fill", "#000")
+    .attr("text-anchor", "start")
+    .attr("font-weight", "bold")
+    .text(d3.format(".3n")   (a[1]) + "%")
+}
+
+function processData(errors, data, data1, data2, data3, data4, data5, data6) {
+  var w = 580;
+  var h = 400;
+
+  // just use the main US projection
+  var projection1 = d3.geoAlbersUsa()
+    .fitSize([w,h], data)
+
+  createMap(data,data1,"#map1", projection1, w, h); //function for map chart
+  //createLineChart(data2); //function for line chart
+  globalLineData = data2; // making line chart data global to be accessed by line chart function
+  createDefaultBarChart(data3); //function for bar chart
+  createDefaultLineChart(data4); //function for default line chart
+  //createBarChart(data5);
+  globalBarData = data5;
+  //createScatterPlot(data6);
+}
+
+d3.queue()
+  .defer(d3.json, "https://gist.githubusercontent.com/dkrathi457/f1b139170c8d0db752e41906d9cdc216/raw/3a181d755ec50a1b2ea98362a5e60fef6c94ff65/us-states.geojson")
+  //.defer(d3.json, "https://api.myjson.com/bins/19dw33") // data for map chart
+  .defer(d3.json, "https://api.myjson.com/bins/yfh91") // updated data for map chart
+  
+  .defer(d3.json, "https://api.myjson.com/bins/kdv39")//updated data for line chart
+  //.defer(d3.json,"https://api.myjson.com/bins/18ielj") //data for default bar chart
+  .defer(d3.json,"https://api.myjson.com/bins/12wq41") //data for default bar chart
+  .defer(d3.json, "https://api.myjson.com/bins/1c6v47")//data for default line chart
+  .defer(d3.json, "https://api.myjson.com/bins/iu7b5") // data for bar chart on click
+  .defer(d3.json, "https://api.myjson.com/bins/u0qtl") //data for scatter plot
+  .await(processData)
+
+//Below is a function used to create default Line Chart
+
+function createDefaultLineChart(data){
+
+  var margin = {top: 30, right: 20, bottom: 30, left: 50},
+      width = 600 - margin.left - margin.right,
+      height = 400 - margin.top - margin.bottom;
+
+  var parseTime = d3.timeParse("%y");
+  var x = d3.scaleLinear().range([0, width]);
+  var z = d3.scaleBand().range([0,width])
+  var y = d3.scaleLog().range([height, 0]);
+
+  var valueline = d3.line()
+                  .x(function(d) { return x(d.YEAR); })
+                  .y(function(d) { return y(d.Freq); });
+
+  var svg = d3.select("#q2").append("svg")
+                  .attr("width", width + margin.left + margin.right)
+                  .attr("height", height + margin.top + margin.bottom)
+                  .append("g")
+                  .attr("transform",
+                          "translate(" + margin.left + "," + margin.top + ")");
+  data.forEach(function(d){
+  			      d.year = parseTime(d.YEAR);
+              d.freq=  +d.Freq;
+          });
+
+  //console.log(d3.extent(data, function(d) {  return d.YEAR; }))
+   x.domain(d3.extent(data, function(d) {  return d.YEAR; }));
+   y.domain(d3.extent(data, function(d) {  return d.Freq; }));
+   
+   //y.domain([10, d3.max(data, function(d) { return d.Freq;  })]);
+
+   z.domain(data.map(function(d){return d.YEAR;}))
+ //console.log(x)
+
+  var dataNest = d3.nest()
+        .key(function(d) {return d.CASE_STATUS})
+        .entries(data);
+  var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+//for Legend is used below link:
+//https://bl.ocks.org/d3noob/08af723fe615c08f9536f656b55755b4
+
+  legendSpace = width/dataNest.length;
+  //console.log(legendSpace)
+  dataNest.forEach(function(d,i) {
+        svg.append("path")
+            .attr("class", "line")
+            .style("stroke", function() { 
+                return d.color = color(d.key); })
+            .attr("d", valueline(d.values)); 
+ // console.log(dataNest)
+
+ svg.append("text")
+            .attr("x", (legendSpace/2)+i*legendSpace+i*5 ) 
+            .attr("y", 0)
+            .attr("class", "legend")    
+            .style("fill", function() { 
+                return d.color = color(d.key); })
+            .text(d.key); 
+
+//console.log(x(2016))
+//console.log(d3.axisBottom(x))
+  svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .attr("class", "x")
+      .call(d3.axisBottom(x).tickValues(z.domain().filter(function(d,i){  return d})));
+
+  svg.append("g")
+      .call(d3.axisLeft(y).ticks(2).tickFormat(d3.formatPrefix(".0",1e3)));
+
+})
+}
+
+function createLineChart(stateName){
+
+	d3.select("#q2").selectAll("svg").remove();
+	//console.log(stateName);
+	stateName = stateName.toUpperCase();
+	data = globalLineData;
+	//console.log(data);
+	var data1 = [];
+
+	data.map(function(d){
+		//console.log(stateName);
+		if(d.STATE == stateName){
+			console.log(d.STATE);
+			var newElement = {};
+			newElement['CASE_STATUS'] = d.CASE_STATUS;
+			newElement['Freq'] = d.Freq;
+			newElement['YEAR'] = d.YEAR;
+			
+			data1.push(newElement);
+
+		}
+	});
+	data = data1;
+	console.log(data);
+
+  var margin = {top: 30, right: 20, bottom: 30, left: 50},
+      width = 600 - margin.left - margin.right,
+      height = 400 - margin.top - margin.bottom;
+
+  var parseTime = d3.timeParse("%y");
+  var x = d3.scaleLinear().range([0, width]);
+  var z = d3.scaleBand().range([0,width])
+  var y = d3.scaleLog().range([height, 0]);
+
+  var valueline = d3.line()
+                  .x(function(d) { return x(d.YEAR); })
+                  .y(function(d) { return y(d.Freq); });
+
+  var svg = d3.select("#q2").append("svg")
+                  .attr("width", width + margin.left + margin.right)
+                  .attr("height", height + margin.top + margin.bottom)
+                  .append("g")
+                  .attr("transform",
+                          "translate(" + margin.left + "," + margin.top + ")");
+  data.forEach(function(d){
+  			      d.year = parseTime(d.YEAR);
+              d.freq=  +d.Freq;
+          });
+
+   x.domain(d3.extent(data, function(d) {  return d.YEAR; }));
+   y.domain(d3.extent(data, function(d) {  return d.Freq; }));
+
+   z.domain(data.map(function(d){return d.YEAR;}))
+
+  var dataNest = d3.nest()
+        .key(function(d) {return d.CASE_STATUS})
+        .entries(data);
+  var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+  legendSpace = width/dataNest.length;
+  dataNest.forEach(function(d,i) {
+        svg.append("path")
+            .attr("class", "line")
+            .style("stroke", function() { 
+                return d.color = color(d.key); })
+            .attr("d", valueline(d.values)); 
+ // console.log(dataNest)
+
+ svg.append("text")
+            .attr("x", (legendSpace/2)+i*legendSpace+i*5 ) 
+            .attr("y", 0)
+            .attr("class", "legend")    
+            .style("fill", function() { 
+                return d.color = color(d.key); })
+            .text(d.key);
+
+  svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .attr("class", "x")
+      .call(d3.axisBottom(x).tickValues(z.domain().filter(function(d,i){  return d})));
+
+  svg.append("g")
+     // .call(d3.axisLeft(y).tickValues(x.domain().filter(function(d,i){ return (i/2)})))
+        .call(d3.axisLeft(y).tickFormat(d3.formatPrefix(".0",1e3)));
+
+})
+}
+
+//end of line chart function
+
+//this function is used to draw default bar chart
+function createDefaultBarChart(data){
+
+    var margin = {top:20, right:20, bottom:180, left:50},
+    width = 600 - margin.left - margin.right;
+    height = 600 - margin.top - margin.bottom;
+    
+  var x = d3.scaleBand()
+        .range([0,width])
+        x.domain(data.map(function(d){return d.departments;}))
+        .padding(0.1);
+  var y = d3.scaleLinear()
+        .range([height,0])
+        y.domain([0,d3.max(data,function(d){return d.Freq;})]);
+    
+x.domain(data.map(function(d) { return d.departments; }));
+  y.domain([0, d3.max(data, function(d) { return d.Freq; })]);
+
+
+  var svg = d3.select("#barchart").append("svg")
+        .attr("width",width + margin.left + margin.right)
+        .attr("height",height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  
+  svg.selectAll("rect")
+    .data(data)
+    .enter().append("rect")
+    .attr("x",function(d){return x(d.departments);})
+    .attr("width",x.bandwidth())
+    .attr("y",function(d){return y(d.Freq);})
+    .attr("height",function(d){return height - y(d.Freq);})
+    .style("fill", "steelblue");
+    
+//Reference: for rotation and font size
+// http://stackoverflow.com/questions/27367849/how-to-rotate-and-change-font-size-on-x-axis
+
+svg.append("g")
+        .attr("class", "x-axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x))
+        .selectAll("text")  
+            .style("text-anchor", "end")
+            .attr("dx", "-1em")
+            .attr("dy", "-.55em")
+            .style("font-size","8px")
+            .attr("transform", function(d) {
+                return "rotate(-90)" 
+                });
+
+    //https://bl.ocks.org/mbostock/9764126
+    padding = -300;
+  svg.append("text")
+            .attr("text-anchor", "middle")
+            .attr("transform", "translate("+ (width/2) +","+(height - (padding/2))+")")
+            .text("Job Titles");
+    
+  svg.append("g")
+    .call(d3.axisLeft(y).tickFormat(d3.formatPrefix(".0",1e3)));
+    padding = -70;
+    svg.append("text")
+            .attr("text-anchor", "middle")  
+            .attr("transform", "translate("+ (padding/2) +","+(height/2)+")rotate(-90)")  
+            .text("Number of H-1B Visa Petitions");
+  }
+
+
+function createBarChart(stateName){
+
+  d3.select("#barchart").selectAll("svg").remove();
+
+  stateName = stateName.toUpperCase();
+  data = globalBarData;
+  var data1 = [];
+
+  data.map(function(d){
+    if(d.STATE == stateName){
+      console.log(d.STATE);
+      var newElement = {};
+      newElement['Freq'] = d.Freq;
+      newElement['departments'] = d.JOB_TITLE;      
+      data1.push(newElement);
+    }
+  });
+
+  data = data1;
+
+  var margin = {top:20, right:20, bottom:180, left:50},
+    width = 600 - margin.left - margin.right;
+    height = 600 - margin.top - margin.bottom;
+    
+var zoom = d3.zoom()
+    .scaleExtent([1, 40])
+    .translateExtent([[-100, -100], [width + 90, height + 100]])
+    .on("zoom", zoomed);
+
+    
+  var x = d3.scaleBand()
+        .range([0,width])
+        x.domain(data.map(function(d){return d.departments;}))
+        .padding(0.1);
+  var y = d3.scaleLinear()
+        .range([height,0])
+        y.domain([0,d3.max(data,function(d){return d.Freq;})]);
+    
+x.domain(data.map(function(d) { return d.departments; }));
+  y.domain([0, d3.max(data, function(d) { return d.Freq; })]);
+
+
+  var svg = d3.select("#barchart").append("svg")
+        .attr("width",width + margin.left + margin.right)
+        .attr("height",height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  
+  svg.selectAll("rect")
+    .data(data)
+    .enter().append("rect")
+    .attr("x",function(d){return x(d.departments);})
+    .attr("width",x.bandwidth())
+    .attr("y",function(d){return y(d.Freq);})
+    .attr("height",function(d){return height - y(d.Freq);})
+    .style("fill", "steelblue");
+    
+svg.append("g")
+        .attr("class", "x-axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x))
+        .selectAll("text")  
+            .style("text-anchor", "end")
+            .attr("dx", "-1em")
+            .attr("dy", "-.55em")
+            .style("font-size","8px")
+            .attr("transform", function(d) {
+                return "rotate(-90)" 
+                });
+
+    //https://bl.ocks.org/mbostock/9764126
+    padding = -300;
+  svg.append("text")
+            .attr("text-anchor", "middle")
+            .attr("transform", "translate("+ (width/2) +","+(height - (padding/2))+")")
+            .text("Job Titles");
+    
+  svg.append("g")
+  //.call(d3.axisLeft(y).tickValues(y.domain().filter(function(d,i){ return !(i%5)})))
+    .call(d3.axisLeft(y).tickFormat(d3.formatPrefix(".0",1e3)));
+    padding = -70;
+    svg.append("text")
+            .attr("text-anchor", "middle")  
+            .attr("transform", "translate("+ (padding/2) +","+(height/2)+")rotate(-90)")  
+            .text("Number of H-1B Visa Petitions");
+
+
+/*var xFisheye = d3.fisheye.scale(d3.scale.linear).domain([-2,90]).range([0,1000]);
+var svg = d3.select("#barchart>svg");
+var rect = svg.selectAll("g.rect")
+.call(redraw)
+function redraw(rect)
+{
+    rect.attr("transform", function(d,i){ return"translate("+((xFisheye(i-1)))+"," + 180 + ")"})
+    .select("rect").attr("width", function(d,i){ return xFisheye(i+1) - xFisheye(i-.2) })
+    
+}*/
+svg.call(zoom);
+
+  function zoomed() {
+    view.attr("transform", d3.event.transform);
+    gX.call(xAxis.scale(d3.event.transform.rescaleX(x)));
+    gY.call(yAxis.scale(d3.event.transform.rescaleY(y)));
+  }
+}
+
+</script>
+
+</html>
